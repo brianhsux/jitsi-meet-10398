@@ -13,7 +13,20 @@ import ScreenSharingButton from './components/native/ScreenSharingButton';
 import VideoMuteButton from './components/native/VideoMuteButton';
 import { isDesktopShareButtonDisabled } from './functions.native';
 import { ICustomToolbarButton, IToolboxNativeButton, NativeToolbarButton } from './types';
+import ToggleCameraButton from './components/native/ToggleCameraButton';
+import AudioDeviceToggleButton from '../mobile/audio-mode/components/AudioDeviceToggleButton';
 
+const audiodevice = {
+    key: 'audiodevice',
+    Content: AudioDeviceToggleButton,
+    group: 0
+};
+
+const toggleCamera = {
+    key: 'toggle-camera',
+    Content: ToggleCameraButton,
+    group: 0
+};
 
 const microphone = {
     key: 'microphone',
@@ -62,6 +75,34 @@ const hangup = {
     Content: HangupContainerButtons,
     group: 3
 };
+
+/**
+ * A hook that returns the audio device toggle button (speaker / earpiece).
+ *
+ * @returns {Object | undefined}
+ */
+function getAudioDeviceToggleButton() {
+    const _iAmVisitor = useSelector(iAmVisitor);
+
+    if (!_iAmVisitor) {
+        return audiodevice;
+    }
+}
+
+
+/**
+ * A hook that returns the toggle camera (front/back) button.
+ *
+ *  @returns {Object | undefined}
+ */
+function getToggleCameraButton() {
+    const _iAmVisitor = useSelector(iAmVisitor);
+
+    if (!_iAmVisitor) {
+        return toggleCamera;
+    }
+}
+
 
 /**
  * A hook that returns the audio mute button.
@@ -138,27 +179,35 @@ function getOverflowMenuButton() {
  */
 export function useNativeToolboxButtons(
         _customToolbarButtons?: ICustomToolbarButton[]): { [key: string]: IToolboxNativeButton; } {
+    const audioDeviceToggleButton = getAudioDeviceToggleButton();
     const audioMuteButton = getAudioMuteButton();
     const videoMuteButton = getVideoMuteButton();
+    const toggleCameraButton = getToggleCameraButton();
     const chatButton = getChatButton();
     const screenSharingButton = getScreenSharingButton();
     const tileViewButton = getTileViewButton();
     const overflowMenuButton = getOverflowMenuButton();
 
     const buttons: { [key in NativeToolbarButton]?: IToolboxNativeButton; } = {
+        audiodevice: audioDeviceToggleButton,
         microphone: audioMuteButton,
         camera: videoMuteButton,
-        chat: chatButton,
-        desktop: screenSharingButton,
-        raisehand,
-        tileview: tileViewButton,
-        overflowmenu: overflowMenuButton,
+        'toggle-camera': toggleCameraButton,
+//         chat: chatButton,
+//         desktop: screenSharingButton,
+//         raisehand,
+//         tileview: tileViewButton,
+//         overflowmenu: overflowMenuButton,
         hangup
     };
     const buttonKeys = Object.keys(buttons) as NativeToolbarButton[];
 
     buttonKeys.forEach(
         key => typeof buttons[key] === 'undefined' && delete buttons[key]);
+
+    // ✅ 在 Logcat 印出所有按鈕
+    console.warn('[useNativeToolboxButtons] Final Buttons:', Object.keys(buttons));
+    console.warn('[useNativeToolboxButtons] Full Detail:', buttons);
 
     const customButtons = _customToolbarButtons?.reduce((prev, { backgroundColor, icon, id, text }) => {
         prev[id] = {
@@ -174,8 +223,11 @@ export function useNativeToolboxButtons(
         return prev;
     }, {} as { [key: string]: ICustomToolbarButton; });
 
-    return {
-        ...buttons,
-        ...customButtons
-    };
+    console.warn('[useNativeToolboxButtons] customButtons:', customButtons);
+
+    return buttons as { [key: string]: IToolboxNativeButton };
+//     return {
+//         ...buttons,
+//         ...customButtons
+//     };
 }

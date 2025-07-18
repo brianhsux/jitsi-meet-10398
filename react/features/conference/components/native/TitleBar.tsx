@@ -84,50 +84,6 @@ const TitleBar = (props: IProps) => {
     return (
         <View
             style = { styles.titleBarWrapper as ViewStyle }>
-            <View style = { styles.pipButtonContainer as ViewStyle }>
-                <PictureInPictureButton styles = { styles.pipButton } />
-            </View>
-            <View
-                pointerEvents = 'box-none'
-                style = { styles.roomNameWrapper as ViewStyle }>
-                {
-                    props._conferenceTimerEnabled
-                    && <View style = { styles.roomTimerView as ViewStyle }>
-                        <ConferenceTimer textStyle = { styles.roomTimer } />
-                    </View>
-                }
-                {
-                    props._roomNameEnabled
-                    && <View style = { styles.roomNameView as ViewStyle }>
-                        <Text
-                            numberOfLines = { 1 }
-                            style = { styles.roomName }>
-                            { props._meetingName }
-                        </Text>
-                    </View>
-                }
-                {/* eslint-disable-next-line react/jsx-no-bind */}
-                <Labels createOnPress = { props._createOnPress } />
-            </View>
-            {
-                props._toggleCameraButtonEnabled
-                && <View style = { styles.titleBarButtonContainer }>
-                    <ToggleCameraButton styles = { styles.titleBarButton } />
-                </View>
-            }
-            {
-                props._audioDeviceButtonEnabled
-                && <View style = { styles.titleBarButtonContainer }>
-                    <AudioDeviceToggleButton styles = { styles.titleBarButton } />
-                </View>
-            }
-            {
-                _isParticipantsPaneEnabled
-                && <View style = { styles.titleBarButtonContainer }>
-                    <ParticipantsPaneButton
-                        styles = { styles.titleBarButton } />
-                </View>
-            }
         </View>
     );
 };

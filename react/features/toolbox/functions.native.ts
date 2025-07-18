@@ -68,13 +68,50 @@ export function isVideoMuteButtonDisabled(state: IReduxState) {
  */
 export function getVisibleNativeButtons(
         { allButtons, clientWidth, iAmVisitor, mainToolbarButtonsThresholds, toolbarButtons }: IGetVisibleNativeButtonsParams) {
-    let filteredButtons = Object.keys(allButtons).filter(key =>
-        typeof key !== 'undefined' // filter invalid buttons that may be coming from config.mainToolbarButtons override
-        && isButtonEnabled(key, toolbarButtons));
 
+    console.log('[getVisibleNativeButtons] ----- START -----');
+    console.log('[getVisibleNativeButtons] allButtons keys:', Object.keys(allButtons));
+    console.log('[getVisibleNativeButtons] toolbarButtons from config:', toolbarButtons);
+    console.log('[getVisibleNativeButtons] iAmVisitor:', iAmVisitor);
+
+//     let filteredButtons = Object.keys(allButtons).filter(key =>
+//         typeof key !== 'undefined' // filter invalid buttons that may be coming from config.mainToolbarButtons override
+//         && isButtonEnabled(key, toolbarButtons));
+
+//     if (iAmVisitor) {
+//         filteredButtons = VISITORS_MODE_BUTTONS.filter(button => filteredButtons.indexOf(button) > -1);
+//     }
+
+    // ✅ Step1: 過濾無效或被禁用的按鈕
+    let filteredButtons = Object.keys(allButtons).filter(key => {
+        if (typeof key === 'undefined') {
+            console.warn(`[getVisibleNativeButtons] ❌ Button key is undefined`);
+            return false;
+        }
+
+        if (key === 'audiodevice') {
+            console.log(`[getVisibleNativeButtons] ✅ 強制保留 ${key}（忽略過濾）`);
+            return true;
+        }
+
+        if (!isButtonEnabled(key, toolbarButtons)) {
+            console.warn(`[getVisibleNativeButtons] ❌ ${key} 被過濾，原因：toolbarButtons 不允許或 config 關閉`);
+            return false;
+        }
+
+        return true;
+    });
+
+    // ✅ Step2: 如果是訪客模式，再次過濾
     if (iAmVisitor) {
-        filteredButtons = VISITORS_MODE_BUTTONS.filter(button => filteredButtons.indexOf(button) > -1);
+        const visitorFiltered = filteredButtons.filter(button => VISITORS_MODE_BUTTONS.includes(button));
+        const removed = filteredButtons.filter(b => !visitorFiltered.includes(b));
+
+        removed.forEach(b => console.warn(`[getVisibleNativeButtons] ❌ ${b} 被過濾，原因：iAmVisitor 模式不允許`));
+        filteredButtons = visitorFiltered;
     }
+
+    console.log('[getVisibleNativeButtons] ✅ 通過過濾的按鈕:', filteredButtons);
 
     const { order } = mainToolbarButtonsThresholds.find(({ width }) => clientWidth > width)
     || mainToolbarButtonsThresholds[mainToolbarButtonsThresholds.length - 1];
@@ -86,6 +123,13 @@ export function getVisibleNativeButtons(
     ];
 
     const mainButtonsKeys = mainToolbarButtonKeysOrder.slice(0, order.length);
+
+    // ✅ 強制手動排序
+    const customOrder = ['audiodevice', 'microphone', 'camera', 'toggle-camera', 'hangup'];
+    const reorderedMainButtons = customOrder.filter(key => mainButtonsKeys.includes(key));
+    mainButtonsKeys.length = 0;
+    mainButtonsKeys.push(...reorderedMainButtons);
+
     const overflowMenuButtons = filteredButtons.reduce((acc, key) => {
         if (!mainButtonsKeys.includes(key)) {
             acc.push(allButtons[key]);
@@ -100,6 +144,7 @@ export function getVisibleNativeButtons(
         const button = overflowMenuButtons.shift()?.key;
 
         button && mainButtonsKeys.push(button);
+        console.log(`[getVisibleNativeButtons] ✅ 只有一個 overflow 按鈕，直接放回主工具列: ${button}`);
     }
 
     const mainMenuButtons
@@ -117,6 +162,10 @@ export function getVisibleNativeButtons(
 
             return 0; // other buttons are sorted by priority
         });
+
+    console.log('[getVisibleNativeButtons] ✅ 最終主工具列按鈕:', mainMenuButtons.map(b => b.key));
+    console.log('[getVisibleNativeButtons] ✅ 最終 overflow 按鈕:', overflowMenuButtons.map(b => b.key));
+    console.log('[getVisibleNativeButtons] ----- END -----');
 
     return {
         mainMenuButtons,
