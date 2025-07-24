@@ -89,7 +89,7 @@ export function getVisibleNativeButtons(
             return false;
         }
 
-        if (key === 'audiodevice') {
+        if (key === 'audiodevice' || key === 'hangup' || key === 'toggle-camera') {
             console.log(`[getVisibleNativeButtons] ✅ 強制保留 ${key}（忽略過濾）`);
             return true;
         }
