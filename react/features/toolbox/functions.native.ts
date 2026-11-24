@@ -125,8 +125,11 @@ export function getVisibleNativeButtons(
     const mainButtonsKeys = mainToolbarButtonKeysOrder.slice(0, order.length);
 
     // ✅ 強制手動排序
-    const customOrder = ['audiodevice', 'microphone', 'camera', 'toggle-camera', 'hangup'];
-    const reorderedMainButtons = customOrder.filter(key => mainButtonsKeys.includes(key));
+    // customOrder 內的按鈕一律放在主工具列，不受螢幕寬度（clientWidth threshold）裁切，
+    // 避免窄螢幕（<= 380dp）時 audiodevice 被擠到 overflow 再被接回最後面，造成不同手機順序不一致。
+    const customOrder = [ 'audiodevice', 'microphone', 'camera', 'toggle-camera', 'hangup' ];
+    const reorderedMainButtons = customOrder.filter(key => filteredButtons.includes(key));
+
     mainButtonsKeys.length = 0;
     mainButtonsKeys.push(...reorderedMainButtons);
 
@@ -147,21 +150,21 @@ export function getVisibleNativeButtons(
         console.log(`[getVisibleNativeButtons] ✅ 只有一個 overflow 按鈕，直接放回主工具列: ${button}`);
     }
 
+    // ✅ 最終排序：customOrder 內的按鈕依 customOrder 排，其他按鈕排在中間，overflowmenu 倒數第二、hangup 最後
+    const tailOrder = [ 'overflowmenu', 'hangup' ];
+    const getButtonRank = (key: string) => {
+        if (tailOrder.includes(key)) {
+            return customOrder.length + 1 + tailOrder.indexOf(key);
+        }
+
+        const index = customOrder.indexOf(key);
+
+        return index === -1 ? customOrder.length : index;
+    };
+
     const mainMenuButtons
-        = mainButtonsKeys.map(key => allButtons[key]).sort((a, b) => {
-
-            // Native toolbox includes hangup and overflowmenu button keys, too
-            // hangup goes last, overflowmenu goes second-to-last
-            if (a.key === 'hangup' || a.key === 'overflowmenu') {
-                return 1;
-            }
-
-            if (b.key === 'hangup' || b.key === 'overflowmenu') {
-                return -1;
-            }
-
-            return 0; // other buttons are sorted by priority
-        });
+        = mainButtonsKeys.map(key => allButtons[key])
+            .sort((a, b) => getButtonRank(a.key) - getButtonRank(b.key));
 
     console.log('[getVisibleNativeButtons] ✅ 最終主工具列按鈕:', mainMenuButtons.map(b => b.key));
     console.log('[getVisibleNativeButtons] ✅ 最終 overflow 按鈕:', overflowMenuButtons.map(b => b.key));
